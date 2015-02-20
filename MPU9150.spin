@@ -11,9 +11,20 @@ OBJ
 VAR
   byte isAlive
 
-PUB main
+PUB scan(scl,sda) | address
+ usb.start(115200)  
+ scl:=15
+ sda:=14
+  waitcnt(clkfreq*2+cnt)
 
-  usb.start(115200)
+  repeat address from 0 to 255 step 1
+    if i2c.devicePresent(SCL,SDA,address)
+      usb.newline
+      usb.bin(address,8)
+  usb.str(String("end of line"))
+  waitcnt(clkfreq*5+cnt)    
+
+PUB main
 
   repeat 3
     usb.str(String("run"))
