@@ -13,16 +13,20 @@ VAR
 
 PUB scan(scl,sda) | address
  usb.start(115200)  
- scl:=15
- sda:=14
+ scl:=8
+ sda:=9
   waitcnt(clkfreq*2+cnt)
-
-  repeat address from 0 to 255 step 1
+ i2c.Initialize(SCL,SDA) 
+ repeat
+  usb.clear
+  repeat address from 0 to 255 step 2 'why not 1?
     if i2c.devicePresent(SCL,SDA,address)
       usb.newline
       usb.bin(address,8)
+  usb.newline
   usb.str(String("end of line"))
-  waitcnt(clkfreq*5+cnt)    
+  waitcnt(clkfreq+cnt)
+
 
 PUB main
 
@@ -43,3 +47,5 @@ PUB main
   else
     usb.str(String("No sensor detected"))
     usb.newline
+
+    
