@@ -6,5 +6,5 @@ CON
   SCL = 15
   SDA = 14
   MPU_address = %1101_0000
-
+  MPU_reg_whoAmI = $75
 PUB main
