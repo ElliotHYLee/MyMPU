@@ -102,7 +102,7 @@ CON
    OneAddr  = $300000                  ' I2C Use 8-bit register address
 
 PUB Initialize(SCL) | SDA              ' An I2C device may be left in an
-   SDA := SCL + 1                      '  invalid state and may need to be
+   SDA := SCL - 1                      '  invalid state and may need to be
    outa[SCL] := 1                       '   reinitialized.  Drive SCL high.
    dira[SCL] := 1
    dira[SDA] := 0                       ' Set SDA as input
@@ -113,7 +113,7 @@ PUB Initialize(SCL) | SDA              ' An I2C device may be left in an
          quit                          '  by the EEPROM
 
 PUB Start(SCL) | SDA                   ' SDA goes HIGH to LOW with SCL HIGH
-   SDA := SCL + 1
+   SDA := SCL - 1
    outa[SCL]~~                         ' Initially drive SCL HIGH
    dira[SCL]~~
    outa[SDA]~~                         ' Initially drive SDA HIGH
@@ -122,7 +122,7 @@ PUB Start(SCL) | SDA                   ' SDA goes HIGH to LOW with SCL HIGH
    outa[SCL]~                          ' Leave SCL LOW
   
 PUB Stop(SCL) | SDA                    ' SDA goes LOW to HIGH with SCL High
-   SDA := SCL + 1
+   SDA := SCL - 1
    outa[SCL]~~                         ' Drive SCL HIGH
    outa[SDA]~~                         '  then SDA HIGH
    dira[SCL]~                          ' Now let them float
@@ -132,7 +132,7 @@ PUB Write(SCL, data) : ackbit | SDA
 '' Write i2c data.  Data byte is output MSB first, SDA data line is valid
 '' only while the SCL line is HIGH.  Data is always 8 bits (+ ACK/NAK).
 '' SDA is assumed LOW and SCL and SDA are both left in the LOW state.
-   SDA := SCL + 1
+   SDA := SCL - 1
    ackbit := 0 
    data <<= 24
    repeat 8                            ' Output data to SDA
@@ -141,6 +141,7 @@ PUB Write(SCL, data) : ackbit | SDA
       outa[SCL]~
    dira[SDA]~                          ' Set SDA to input for ACK/NAK
    outa[SCL]~~
+   waitcnt(cnt + clkfreq/1000000*50)
    ackbit := ina[SDA]                  ' Sample SDA when SCL is HIGH
    outa[SCL]~
    outa[SDA]~                          ' Leave SDA driven LOW
@@ -149,7 +150,7 @@ PUB Write(SCL, data) : ackbit | SDA
 PUB Read(SCL, ackbit): data | SDA
 '' Read in i2c data, Data byte is output MSB first, SDA data line is
 '' valid only while the SCL line is HIGH.  SCL and SDA left in LOW state.
-   SDA := SCL + 1
+   SDA := SCL - 1
    data := 0
    dira[SDA]~                          ' Make SDA an input
    repeat 8                            ' Receive data from SDA

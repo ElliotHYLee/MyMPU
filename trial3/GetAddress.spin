@@ -6,27 +6,29 @@ OBJ
 
   i2c : "Basic_I2C_Driver.spin"
   usb : "Parallax Serial Terminal.spin"
-  const : "Constants"
+
 
 VAR
   byte isAlive
 
-PUB scan(scl,sda) | address
+PUB scan(scl,sda) | address , ack
  usb.start(115200)  
- scl:=7
- sda:=6
+ scl:=15
+ sda:=14
 
- i2c.Initialize(scl,sda)
- waitcnt(clkfreq*2+cnt)      
+ i2c.Initialize(scl)
+ waitcnt(clkfreq+cnt)      
  repeat
   usb.clear
   address :=0
   repeat address from 0 to 255 step 2 'why not 1?
-    if i2c.devicePresent(scl,sda,address)
+    i2c.start(scl)
+    ack := i2c.write(scl,address)
+    i2c.stop(scl)
+    'usb.dec(ack) 
+    if (ack ==0)
       usb.newline
       usb.bin(address,8)
   usb.newline
   usb.str(String("end of line"))
   waitcnt(clkfreq+cnt)
-
-  
