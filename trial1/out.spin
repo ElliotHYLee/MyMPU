@@ -4,7 +4,7 @@ CON
 
 PUB main
 dira[18] :=1
-dira[12] :=1 
+dira[1] :=1 
 repeat
-  outa[18] :=1
-  outa[12] :=1 
+  outa[2] :=1
+  outa[1] :=1 
