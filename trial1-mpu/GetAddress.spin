@@ -13,13 +13,9 @@ VAR
 
 PUB scan(scl,sda) | address
  usb.start(115200)  
-<<<<<<< HEAD
  scl:= 15
  sda:= 14
-=======
- scl:= 1
- sda:= 0
->>>>>>> origin/master
+
 
  i2c.Initialize(scl,sda)
  waitcnt(clkfreq*2+cnt)      
