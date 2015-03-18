@@ -9,6 +9,13 @@ OBJ
   FDS    : "FullDuplexSerial"
   math   : "FloatMath"  'no cog
 Var
+
+'Program Variable
+  byte compFilterType
+  long runStack[128], playID, displayStack[128]
+
+'MPU DATA 
+  
   '2nd-level analized data
   Long compFilter[3], gForce, heading[3]
 
@@ -19,9 +26,10 @@ Var
   '1st-level data
   Long acc[3], gyro[3], temperature, mag[3]
 
-  'program variable
-  byte compFilterType
-  long runStack[128], playID, displayStack[128] 
+'MPL DATA
+
+  Long localPressure, localAltitude, pressure, prevAlt[10], avgAlt, currentAlt, firstTimeAlt, biasAltitude
+
 PUB main
 
   FDS.quickStart  
@@ -29,13 +37,15 @@ PUB main
   initSensor(15,14)
 
   setMpu(%000_11_000, %000_01_000) '2000 deg/s, 4g
-
-  startPlay
+  setMpl(99600, 230)
+  startTest
 
   repeat
 
     FDS.clear
-{
+
+    
+
 '    printSomeX
     fds.newline
     fds.newline
@@ -51,22 +61,28 @@ PUB main
     fds.newline
     fds.newline
     fds.decln(acc[0]*acc[0]+acc[1]*acc[1]+acc[2]*acc[2])
-}
-    printMagInfo    
+
+    printMagInfo
+
+    fds.newline
+    fds.newline
+    fds.newline    
+    fds.decLn(pressure)
+    fds.decLn(avgAlt)    
     waitcnt(cnt+clkfreq/10)
 
 
 
 
-PUB stopPlay
+PUB stopTest
   if playID
     cogstop(playID ~ -1)
     
-PUB startPlay
- stopPlay
- playID := cognew(playSensor, @runStack) + 1
+PUB startTest
+ stopTest
+ playID := cognew(playTest, @runStack) + 1
  
-PUB playSensor
+PUB playTest
   repeat
     run
                      
@@ -88,10 +104,12 @@ PUB setMpu(gyroSet, accSet)
     compFilterType := 12
 
 
+
 PUB run
 
   sensor.reportData(@acc, @gyro,@mag, @temperature)
-
+  pressure := sensor.getAvgPressure
+  
   if compFilterType == 12
     calcCompFilter_30
   elseif compFilterType == 13
@@ -100,8 +118,61 @@ PUB run
     calcCompFilter_30  'default
 
   getAvgMag
+  getAvgAlt
+
+'===========================================
+'===========================================
+PUB setMpl(localP, localH)
+  firstTimeAlt := 1
+  localPressure := localP
+  localAltitude := localH
+  sensor.setMpl(localP)
+  calcAlitBias
   
-      
+PUB getAltitude(xPtr)
+
+  long[xPtr] := avgAlt
+
+PUB getPressure(xPtr)
+
+  long[xPtr] := pressure
+  
+PRI getRawAltitude | rawAltitude
+
+  rawAltitude := 10129 - (pressure+5)/10
+
+  return rawAltitude
+
+PRI calcAlitBias  
+
+  biasAltitude := 10129 - (pressure+5)/10 - localAltitude  
+
+
+PUB getAvgAlt
+
+  if firstTimeAlt
+    repeat 20
+      calcAvgAlt
+    firstTimeAlt := 0
+  else
+    calcAvgAlt    
+
+PRI calcAvgAlt | i, avgCoef
+
+  avgCoef:= 10
+
+  repeat i from 0 to (avgCoef-2)
+    prevAlt[i] := prevAlt[i+1]
+  prevAlt[avgCoef-1] := getRawAltitude
+
+  avgAlt := 0
+  
+  repeat i from 0 to (avgCoef-1)
+    avgAlt += prevAlt[i]/avgCoef 
+
+
+'===========================================
+'===========================================
 PUB calcCompFilter_31 | a,tempX,tempY,tempZ, tempTot
 {{
 calcCompFilter_31
@@ -142,7 +213,6 @@ Complementary Filter for 2000 deg/s and 2g
   tempTot := math.FFloat(68000000)    
   compFilter[2] :=  math.FRound(math.FSqr(math.FSub(tempTot,math.FAdd(tempX, tempY))))    
 
-  
 PUB getAvgAcc | i, avgCoef
 
   avgCoef:= 5
@@ -185,6 +255,7 @@ PUB getAvgMag | i, avgCoef
     avgMag[1] += prevMagY[i]/avgCoef
     avgMag[2] += prevMagZ[i]/avgCoef    
 
+
 PUB getHeading(headingPtr)| i
   repeat i from 0 to 2
     Long[headingPtr][i] := heading[i]
@@ -198,8 +269,6 @@ PUB getEulerAngle(eAnglePtr)
   Long[eAnglePtr][1] := compFilter[1]
   Long[eAnglePtr][2] := avgAcc[2]
   return
-  
-PUB getAltitude
 
 PUB getAcc(accPtr) | i
   repeat i from 0 to 2
