@@ -27,16 +27,16 @@ PUB main
   FDS.quickStart  
   
   initSensor(15,14)
-
+ 
   setMpu(%000_11_000, %000_01_000) '2000 deg/s, 4g
 
   startPlay
-
+  
   repeat
 
     FDS.clear
-{
-'    printSomeX
+
+    printSomeX
     fds.newline
     fds.newline
 '    printSomeY
@@ -51,7 +51,7 @@ PUB main
     fds.newline
     fds.newline
     fds.decln(acc[0]*acc[0]+acc[1]*acc[1]+acc[2]*acc[2])
-}
+
     printMagInfo    
     waitcnt(cnt+clkfreq/10)
 
